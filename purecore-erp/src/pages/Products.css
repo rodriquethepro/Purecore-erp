@@ -1,0 +1,189 @@
+/* Products.css */
+
+/* Page Background & Fonts */
+.products-page {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: bgFade 10s infinite alternate;
+}
+
+/* Page Animation */
+@keyframes bgFade {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Main Heading */
+.products-page h1 {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
+  letter-spacing: 2px;
+}
+
+/* Form Container */
+.product-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 50px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Form Inputs */
+.product-form input {
+  padding: 12px 15px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  flex: 1 1 180px;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.2);
+}
+
+.product-form input:focus {
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px #0ff, 0 0 30px #0ff;
+}
+
+/* Form Button */
+.product-form button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0ff, #00f);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+}
+
+.product-form button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
+}
+
+/* Table Styles */
+.products-table {
+  width: 100%;
+  max-width: 1200px;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 0 25px rgba(0,255,255,0.2);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.products-table th, .products-table td {
+  padding: 15px;
+  text-align: left;
+}
+
+.products-table th {
+  background: rgba(0, 255, 255, 0.1);
+  color: #0ff;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.products-table tbody tr {
+  background: rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.products-table tbody tr:hover {
+  background: rgba(0, 255, 255, 0.15);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px #0ff;
+}
+
+.products-table td button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.products-table td button:first-child {
+  background: #0ff;
+  margin-right: 5px;
+}
+
+.products-table td button:first-child:hover {
+  background: #00f;
+  transform: scale(1.1);
+}
+
+.products-table td button:last-child {
+  background: #f00;
+}
+
+.products-table td button:last-child:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px red;
+}
+
+/* Responsive Layout */
+@media (max-width: 1024px) {
+  .product-form {
+    justify-content: space-around;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-page h1 {
+    font-size: 2.2rem;
+  }
+
+  .product-form input {
+    flex: 1 1 140px;
+  }
+
+  .products-table th, .products-table td {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .products-page {
+    padding: 20px 10px;
+  }
+
+  .products-page h1 {
+    font-size: 1.8rem;
+  }
+
+  .product-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .products-table {
+    font-size: 0.85rem;
+  }
+
+  .products-table th, .products-table td {
+    padding: 8px;
+  }
+}

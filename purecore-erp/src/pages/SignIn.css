@@ -1,0 +1,85 @@
+/* Page Background */
+.signin-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  font-family: 'Poppins', sans-serif;
+  animation: bgFade 10s infinite alternate;
+}
+
+/* Background Animation */
+@keyframes bgFade {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Form Container */
+.signin-container {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 50px 40px;
+  border-radius: 15px;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Heading */
+.signin-container h1 {
+  color: #0ff;
+  margin-bottom: 25px;
+  text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+  letter-spacing: 1px;
+}
+
+/* Form Inputs */
+.signin-form input {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.signin-form input:focus {
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px #0ff, 0 0 30px #0ff;
+}
+
+/* Button */
+.signin-form button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0ff, #00f);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.signin-form button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
+}
+
+.error-msg {
+  color: #f00;
+  margin-bottom: 15px;
+  font-weight: 600;
+  text-shadow: 0 0 5px red;
+}

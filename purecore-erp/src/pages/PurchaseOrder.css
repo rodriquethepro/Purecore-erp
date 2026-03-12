@@ -1,0 +1,138 @@
+/* PurchaseOrder.css */
+
+/* Page */
+.po-page {
+  padding: 2rem;
+  font-family: "Arial", sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  min-height: 100vh;
+  color: #fff;
+}
+
+/* Headings */
+.po-page h1,
+.po-page h2,
+.po-page h3 {
+  text-align: center;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
+/* Sections */
+.po-section {
+  background: rgba(0, 255, 255, 0.05);
+  padding: 1rem 2rem;
+  margin-bottom: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 255, 255, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.po-section:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 255, 255, 0.5);
+}
+
+/* Inputs and dropdowns */
+.po-section input,
+.po-section select {
+  padding: 12px 15px;
+  margin: 0.5rem 0;
+  border-radius: 12px;
+  border: 2px solid rgba(0, 255, 255, 0.4);
+  outline: none;
+  font-size: 1rem;
+  width: 100%;
+  background: rgba(0, 255, 255, 0.1);
+  color: #000;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.po-section select option {
+  background: #111;
+  color: #fff;
+}
+
+.po-section input:focus,
+.po-section select:focus {
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 15px #0ff, 0 0 30px #0ff;
+  color: #000;
+}
+
+/* Buttons */
+button,
+.btn-create,
+.btn-delete {
+  padding: 10px 20px;
+  margin: 0.5rem 0;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  color: #fff;
+  background: linear-gradient(90deg, #00ffff, #00c3ff);
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff inset;
+}
+
+button:hover,
+.btn-create:hover,
+.btn-delete:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff inset;
+}
+
+/* PO Items */
+.po-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 0.5rem 0;
+  border-radius: 10px;
+  background: rgba(0, 255, 255, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 255, 255, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.po-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
+}
+
+/* PO Cards (History) */
+.po-card {
+  background: rgba(0, 255, 255, 0.05);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.po-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 255, 255, 0.5);
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  .po-section {
+    padding: 1rem;
+  }
+
+  .po-section input,
+  .po-section select,
+  button,
+  .btn-create,
+  .btn-delete {
+    width: 100%;
+  }
+
+  .po-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
