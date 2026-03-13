@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import "./PurchaseOrder.css";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
 
 export default function PurchaseOrder() {
   const [products, setProducts] = useState([]);
@@ -102,13 +102,14 @@ export default function PurchaseOrder() {
       `R${item.total}`,
     ]);
 
-    autoTable(doc, {
+    doc.autoTable({
       startY: 65,
       head: [["Product", "Qty", "Price", "Total"]],
       body: tableData,
     });
 
-    doc.text(`Total: R${total}`, 14, doc.lastAutoTable.finalY + 10);
+    const finalY = doc.lastAutoTable?.finalY || 100;
+    doc.text(`Total: R${total}`, 14, finalY + 10);
 
     return doc;
   };
