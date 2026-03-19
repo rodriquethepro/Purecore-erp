@@ -117,6 +117,7 @@ export default function Products() {
       </div>
 
       <h2>Product List</h2>
+      <div className="table-wrapper">
       <table className="products-table">
         <thead>
           <tr>
@@ -144,6 +145,7 @@ export default function Products() {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

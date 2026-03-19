@@ -11,6 +11,9 @@ export default function Invoice() {
   const [customer, setCustomer] = useState({ name: "", address: "", phone: "" });
   const [invoices, setInvoices] = useState([]);
 
+  // ✅ NEW STATE (delivery toggle)
+  const [deliveryOption, setDeliveryOption] = useState("free");
+
   // Fetch Products
   const fetchProducts = async () => {
     const { data } = await supabase.from("products").select("*");
@@ -21,7 +24,7 @@ export default function Invoice() {
   const fetchInvoices = async () => {
     const { data } = await supabase
       .from("invoices")
-      .select("*") // Make sure 'status' is included
+      .select("*")
       .order("created_at", { ascending: false });
     setInvoices(data || []);
   };
@@ -56,7 +59,7 @@ export default function Invoice() {
           name: product.name,
           selling_price: Number(product.selling_price),
           buying_price: Number(product.buying_price),
-          price: Number(product.selling_price), // Price for PDF & DB
+          price: Number(product.selling_price),
           quantity: Number(qty),
           total: Number(qty) * Number(product.selling_price),
         },
@@ -69,7 +72,7 @@ export default function Invoice() {
   // Remove Item
   const removeItem = (productId) => setItems(items.filter((i) => i.product_id !== productId));
 
-  // Generate PDF (kept exactly as your last version)
+  // Generate PDF (UNCHANGED)
   const generatePDF = (invoiceData, itemsList, total, deliveryFee) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -158,7 +161,10 @@ export default function Invoice() {
 
     const currentItems = [...items];
     let total = currentItems.reduce((sum, i) => sum + i.total, 0);
-    let deliveryFee = total < 400 ? 50 : 0;
+
+    // ✅ UPDATED DELIVERY LOGIC
+    let deliveryFee = deliveryOption === "paid" ? 50 : 0;
+
     total += deliveryFee;
 
     const { data: invoice } = await supabase
@@ -172,12 +178,11 @@ export default function Invoice() {
         invoice_id: invoice.id,
         product_id: item.product_id,
         quantity: item.quantity,
-        price: item.price,          // <- fixes null price
+        price: item.price,
         selling_price: item.selling_price,
         buying_price: item.buying_price
       }]);
 
-      // Deduct stock
       const { data: product } = await supabase
         .from("products")
         .select("*")
@@ -193,12 +198,13 @@ export default function Invoice() {
     setCustomer({ name: "", address: "", phone: "" });
     setSelectedProduct("");
     setQty(1);
+    setDeliveryOption("free"); // reset
 
     fetchProducts();
     fetchInvoices();
 
     const doc = generatePDF(invoice, currentItems, total, deliveryFee);
-    doc.output("dataurlnewwindow"); // PDF now opens
+    doc.output("dataurlnewwindow");
   };
 
   // Process Invoice
@@ -229,12 +235,15 @@ export default function Invoice() {
     const mappedItems = invoiceItems.map((i) => ({
       product_id: i.product_id,
       name: products.find(p => p.id === i.product_id)?.name || "Unknown",
-      price: i.price,               // fixes null price
+      price: i.price,
       quantity: i.quantity,
       total: i.price * i.quantity
     }));
     let itemsTotal = mappedItems.reduce((sum, i) => sum + i.total, 0);
-    let deliveryFee = itemsTotal < 400 ? 50 : 0;
+
+    // ✅ UPDATED DELIVERY DETECTION
+    let deliveryFee = (invoice.total - itemsTotal) > 0 ? 50 : 0;
+
     const doc = generatePDF(invoice, mappedItems, invoice.total, deliveryFee);
     doc.output("dataurlnewwindow");
   };
@@ -272,6 +281,15 @@ export default function Invoice() {
             <button className="btn btn-remove" onClick={() => removeItem(i.product_id)}>Remove</button>
           </div>
         ))}
+      </div>
+
+      {/* ✅ DELIVERY TOGGLE UI */}
+      <h3>Delivery Option</h3>
+      <div className="invoice-form">
+        <select value={deliveryOption} onChange={(e) => setDeliveryOption(e.target.value)}>
+          <option value="free">Free Delivery</option>
+          <option value="paid">Add Delivery Fee (R50)</option>
+        </select>
       </div>
 
       <button className="btn btn-create" onClick={createInvoice}>Create Invoice</button>
