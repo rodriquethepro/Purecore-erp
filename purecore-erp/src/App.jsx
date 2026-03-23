@@ -11,6 +11,7 @@ import Dashboard from "./components/Dashboard";
 import Products from "./pages/Products";
 import Invoices from "./pages/Invoices";
 import PurchaseOrders from "./pages/PurchaseOrders";
+import Customers from "./pages/Customers"; // ✅ ADDED
 
 function App() {
   const [session, setSession] = useState(null);
@@ -54,6 +55,7 @@ function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/products"
           element={
@@ -62,6 +64,7 @@ function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/invoices"
           element={
@@ -70,6 +73,7 @@ function App() {
             </PrivateRoute>
           }
         />
+
         <Route
           path="/purchase-orders"
           element={
@@ -79,7 +83,17 @@ function App() {
           }
         />
 
-        {/* Redirect any unknown route to dashboard if logged in, otherwise to signin */}
+        {/* ✅ NEW CUSTOMERS ROUTE */}
+        <Route
+          path="/customers"
+          element={
+            <PrivateRoute>
+              <Customers />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Redirect unknown routes */}
         <Route
           path="*"
           element={session ? <Navigate to="/" /> : <Navigate to="/signin" />}

@@ -1,0 +1,243 @@
+/* Customers Page Styles */
+
+/* Page Background & Fonts */
+.customers-page {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: bgFade 10s infinite alternate;
+}
+
+/* Page Animation */
+@keyframes bgFade {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Main Heading */
+.customers-page h1 {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
+  letter-spacing: 2px;
+}
+
+/* Form Container */
+.customer-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 50px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Form Inputs */
+.customer-form input {
+  padding: 12px 15px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  flex: 1 1 180px;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.2);
+}
+
+.customer-form input:focus {
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px #0ff, 0 0 30px #0ff;
+}
+
+/* Form Button */
+.customer-form button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #0ff, #00f);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+}
+
+.customer-form button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
+}
+
+/* Table Wrapper (horizontal scroll for tablets) */
+.table-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  overflow-x: auto;
+}
+
+/* Table Styles */
+.customers-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 0 25px rgba(0,255,255,0.2);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.customers-table th,
+.customers-table td {
+  padding: 15px;
+  text-align: left;
+}
+
+.customers-table th {
+  background: rgba(0, 255, 255, 0.1);
+  color: #0ff;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.customers-table tbody tr {
+  background: rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
+}
+
+.customers-table tbody tr:hover {
+  background: rgba(0, 255, 255, 0.15);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px #0ff;
+}
+
+/* Table Buttons */
+.customers-table td button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.customers-table td button:first-child {
+  background: #0ff;
+  margin-right: 5px;
+}
+
+.customers-table td button:first-child:hover {
+  background: #00f;
+  transform: scale(1.1);
+}
+
+.customers-table td button:last-child {
+  background: #f00;
+}
+
+.customers-table td button:last-child:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px red;
+}
+
+/* Tablet Adjustments */
+@media (max-width: 1024px) {
+  .customer-form {
+    justify-content: space-around;
+  }
+}
+
+/* Smaller Tablet */
+@media (max-width: 768px) {
+
+  .customers-page h1 {
+    font-size: 2.2rem;
+  }
+
+  .customer-form input {
+    flex: 1 1 140px;
+  }
+
+  .customers-table th,
+  .customers-table td {
+    padding: 10px;
+  }
+
+  /* Convert table to card layout */
+  .customers-table thead {
+    display: none;
+  }
+
+  .customers-table,
+  .customers-table tbody,
+  .customers-table tr,
+  .customers-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .customers-table tr {
+    margin-bottom: 15px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0,255,255,0.2);
+  }
+
+  .customers-table td {
+    text-align: right;
+    padding: 10px;
+    position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .customers-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    font-weight: bold;
+    color: #0ff;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+  }
+
+  .customers-table td:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+
+  .customers-page {
+    padding: 20px 10px;
+  }
+
+  .customers-page h1 {
+    font-size: 1.8rem;
+  }
+
+  .customer-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .customers-table {
+    font-size: 0.85rem;
+  }
+
+  .customers-table td button {
+    margin-left: 5px;
+  }
+}

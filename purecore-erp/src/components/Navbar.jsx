@@ -27,6 +27,7 @@ export default function Navbar() {
           <Link to="/products" className="nav-item">Products</Link>
           <Link to="/invoices" className="nav-item">Invoices</Link>
           <Link to="/purchase-orders" className="nav-item">Purchase Orders</Link>
+          <Link to="/customers" className="nav-item">Customers</Link>
           <button onClick={handleLogout} className="nav-item logout-btn">Logout</button>
         </div>
 

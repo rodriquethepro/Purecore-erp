@@ -71,13 +71,13 @@ const generatePDF = (invoiceData, itemsList, total, deliveryFee) => {
   doc.setFontSize(11);
   doc.text("Banking Details", 20, bottomY);
   bottomY += 8;
-  doc.text("Bank: FNB", 20, bottomY);
+  doc.text("Bank: Capitec", 20, bottomY);
   bottomY += 6;
   doc.text("Account Name: PureCore", 20, bottomY);
   bottomY += 6;
-  doc.text("Account Number: 123456789", 20, bottomY);
+  doc.text("Account Number: 2517867905", 20, bottomY);
   bottomY += 6;
-  doc.text("Branch Code: 250655", 20, bottomY);
+  doc.text("Branch Code: 470010", 20, bottomY);
 
   // Received Section (Right)
   let receivedY = 210;
@@ -97,7 +97,7 @@ const generatePDF = (invoiceData, itemsList, total, deliveryFee) => {
 
   // Footer
   doc.setFontSize(10);
-  doc.text("Thank you for choosing PureCore Cleaning Chemicals", 20, 285);
+  doc.text("Thank you for choosing PureCore Group", 20, 285);
 
   return doc;
 };

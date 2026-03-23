@@ -2,25 +2,30 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import jsPDF from "jspdf";
 import "./Invoice.css";
+import logo from "../assets/Purecore-logo.png"; // ✅ LOGO IMPORT
 
 export default function Invoice() {
   const [products, setProducts] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [qty, setQty] = useState(1);
   const [items, setItems] = useState([]);
   const [customer, setCustomer] = useState({ name: "", address: "", phone: "" });
   const [invoices, setInvoices] = useState([]);
-
-  // ✅ NEW STATE (delivery toggle)
   const [deliveryOption, setDeliveryOption] = useState("free");
 
-  // Fetch Products
+  // ---------------------- FETCH DATA ----------------------
   const fetchProducts = async () => {
     const { data } = await supabase.from("products").select("*");
     setProducts(data || []);
   };
 
-  // Fetch Invoices
+  const fetchCustomers = async () => {
+    const { data } = await supabase.from("customers").select("*");
+    setCustomers(data || []);
+  };
+
   const fetchInvoices = async () => {
     const { data } = await supabase
       .from("invoices")
@@ -31,10 +36,25 @@ export default function Invoice() {
 
   useEffect(() => {
     fetchProducts();
+    fetchCustomers();
     fetchInvoices();
   }, []);
 
-  // Add Product to Invoice
+  // ---------------------- HANDLE CUSTOMER SELECT ----------------------
+  useEffect(() => {
+    if (!selectedCustomerId) return;
+
+    const cust = customers.find(c => String(c.id) === String(selectedCustomerId));
+    if (cust) {
+      setCustomer({
+        name: cust.name || "",
+        address: `${cust.street || ""} ${cust.suburb || ""} ${cust.town || ""}`.trim(),
+        phone: cust.phone || "",
+      });
+    }
+  }, [selectedCustomerId, customers]);
+
+  // ---------------------- ITEMS LOGIC ----------------------
   const addItem = () => {
     const product = products.find((p) => String(p.id) === String(selectedProduct));
     if (!product) return;
@@ -69,22 +89,21 @@ export default function Invoice() {
     setQty(1);
   };
 
-  // Remove Item
   const removeItem = (productId) => setItems(items.filter((i) => i.product_id !== productId));
 
-  // Generate PDF (UNCHANGED)
+  // ---------------------- PDF GENERATION ----------------------
   const generatePDF = (invoiceData, itemsList, total, deliveryFee) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("Pure Core Supplies", pageWidth / 2, y, { align: "center" });
-    y += 8;
+    doc.addImage(logo, "PNG", (pageWidth - 100) / 2, 10, 100, 35);
+    let y = 30;
+
+    y += 10;
     doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text("20 Cupido Road, Stellenbosch", pageWidth / 2, y, { align: "center" });
+    doc.text("20 Cupido Road", pageWidth / 2, y, { align: "center" });
+    y += 5;
+    doc.text("Stellenbosch", pageWidth / 2, y, { align: "center" });
     y += 6;
     doc.text("Phone: 071 856 6139", pageWidth / 2, y, { align: "center" });
 
@@ -92,22 +111,25 @@ export default function Invoice() {
     doc.setFontSize(12);
     doc.text(`Invoice: INV-${String(invoiceData.invoice_number || "").padStart(4, "0")}`, 20, y);
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, y + 7);
+
     doc.text("Bill To:", 140, y);
     doc.text(invoiceData.customer_name, 140, y + 6);
     doc.text(invoiceData.customer_address, 140, y + 12);
     doc.text(`Phone: ${invoiceData.customer_phone}`, 140, y + 18);
-    y += 30;
 
+    y += 30;
     doc.setFillColor(230, 230, 230);
     doc.rect(20, y - 6, 170, 8, "F");
+
     doc.setFont("helvetica", "bold");
     doc.text("Product", 25, y);
     doc.text("Qty", 110, y);
     doc.text("Price", 135, y);
     doc.text("Total", 160, y);
-    y += 10;
 
+    y += 10;
     doc.setFont("helvetica", "normal");
+
     itemsList.forEach((item) => {
       doc.text(item.name, 25, y);
       doc.text(String(item.quantity), 110, y);
@@ -129,10 +151,10 @@ export default function Invoice() {
     doc.text("Banking Details", 20, footerY);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text("Bank: FNB", 20, footerY + 6);
-    doc.text("Account Name: Pure Core Supplies", 20, footerY + 12);
-    doc.text("Account Number: 123456789", 20, footerY + 18);
-    doc.text("Branch Code: 250655", 20, footerY + 24);
+    doc.text("Bank: Capitec", 20, footerY + 6);
+    doc.text("Account Name: PureCore Group", 20, footerY + 12);
+    doc.text("Account Number: 2517867905", 20, footerY + 18);
+    doc.text("Branch Code: 470010", 20, footerY + 24);
     doc.setFont("helvetica", "bold");
     doc.text("Payment Reference:", 20, footerY + 34);
     doc.setFont("helvetica", "normal");
@@ -149,27 +171,30 @@ export default function Invoice() {
     doc.line(rightX + 15, footerY + 22, rightX + 60, footerY + 22);
     doc.text("Signature:", rightX, footerY + 34);
     doc.line(rightX + 25, footerY + 34, rightX + 60, footerY + 34);
+    doc.text("Thank you for choosing PureCore Group", pageWidth / 2, 285, { align: "center" });
 
-    doc.text("Thank you for choosing Pure Core Supplies", pageWidth / 2, 285, { align: "center" });
     return doc;
   };
 
-  // Create Invoice
+  // ---------------------- CREATE INVOICE ----------------------
   const createInvoice = async () => {
     if (!customer.name || !customer.address || !customer.phone) return alert("Fill customer details");
     if (items.length === 0) return alert("Add items");
 
     const currentItems = [...items];
     let total = currentItems.reduce((sum, i) => sum + i.total, 0);
-
-    // ✅ UPDATED DELIVERY LOGIC
     let deliveryFee = deliveryOption === "paid" ? 50 : 0;
-
     total += deliveryFee;
 
     const { data: invoice } = await supabase
       .from("invoices")
-      .insert([{ customer_name: customer.name, customer_address: customer.address, customer_phone: customer.phone, total, status: "pending" }])
+      .insert([{
+        customer_name: customer.name,
+        customer_address: customer.address,
+        customer_phone: customer.phone,
+        total,
+        status: "pending"
+      }])
       .select()
       .single();
 
@@ -188,6 +213,7 @@ export default function Invoice() {
         .select("*")
         .eq("id", item.product_id)
         .single();
+
       await supabase
         .from("products")
         .update({ quantity: product.quantity - item.quantity })
@@ -196,9 +222,10 @@ export default function Invoice() {
 
     setItems([]);
     setCustomer({ name: "", address: "", phone: "" });
+    setSelectedCustomerId("");
     setSelectedProduct("");
     setQty(1);
-    setDeliveryOption("free"); // reset
+    setDeliveryOption("free");
 
     fetchProducts();
     fetchInvoices();
@@ -207,31 +234,48 @@ export default function Invoice() {
     doc.output("dataurlnewwindow");
   };
 
-  // Process Invoice
+  // ---------------------- REST OF YOUR EXISTING FUNCTIONS ----------------------
   const processInvoice = async (id) => {
     if (!confirm("Mark this invoice as processed?")) return;
     await supabase.from("invoices").update({ status: "processed" }).eq("id", id);
     fetchInvoices();
   };
 
-  // Cancel Invoice
   const cancelInvoice = async (id) => {
     if (!confirm("Cancel this invoice and restore stock?")) return;
-    const { data: invoiceItems } = await supabase.from("invoice_items").select("*").eq("invoice_id", id);
+
+    const { data: invoiceItems } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id);
+
     for (const item of invoiceItems) {
-      const { data: product } = await supabase.from("products").select("*").eq("id", item.product_id).single();
-      await supabase.from("products").update({ quantity: product.quantity + item.quantity }).eq("id", item.product_id);
+      const { data: product } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", item.product_id)
+        .single();
+
+      await supabase
+        .from("products")
+        .update({ quantity: product.quantity + item.quantity })
+        .eq("id", item.product_id);
     }
+
     await supabase.from("invoice_items").delete().eq("invoice_id", id);
     await supabase.from("invoices").delete().eq("id", id);
+
     fetchProducts();
     fetchInvoices();
   };
 
-  // View PDF
   const viewPDF = async (invoiceId) => {
     const { data: invoice } = await supabase.from("invoices").select("*").eq("id", invoiceId).single();
-    const { data: invoiceItems } = await supabase.from("invoice_items").select("*").eq("invoice_id", invoiceId);
+    const { data: invoiceItems } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", invoiceId);
+
     const mappedItems = invoiceItems.map((i) => ({
       product_id: i.product_id,
       name: products.find(p => p.id === i.product_id)?.name || "Unknown",
@@ -239,29 +283,60 @@ export default function Invoice() {
       quantity: i.quantity,
       total: i.price * i.quantity
     }));
-    let itemsTotal = mappedItems.reduce((sum, i) => sum + i.total, 0);
 
-    // ✅ UPDATED DELIVERY DETECTION
+    let itemsTotal = mappedItems.reduce((sum, i) => sum + i.total, 0);
     let deliveryFee = (invoice.total - itemsTotal) > 0 ? 50 : 0;
 
     const doc = generatePDF(invoice, mappedItems, invoice.total, deliveryFee);
     doc.output("dataurlnewwindow");
   };
 
+  // ---------------------- RENDER ----------------------
   return (
     <div className="invoice-page">
       <h1>Create Invoice</h1>
 
       <h3>Customer Details</h3>
       <div className="invoice-form">
-        <input placeholder="Customer Name" value={customer.name} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} />
-        <input placeholder="Address" value={customer.address} onChange={(e) => setCustomer({ ...customer, address: e.target.value })} />
-        <input placeholder="Phone" value={customer.phone} onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} />
+        <select
+          value={selectedCustomerId}
+          onChange={(e) => setSelectedCustomerId(e.target.value)}
+          className="invoice-input"
+        >
+          <option value="">Select Customer</option>
+          {customers.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({c.town})
+            </option>
+          ))}
+        </select>
+
+        <input
+          placeholder="Customer Name"
+          value={customer.name}
+          onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+          className="invoice-input"
+        />
+        <textarea
+          placeholder="Address"
+          value={customer.address}
+          onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+          className="invoice-input"
+        />
+        <input
+          placeholder="Phone"
+          value={customer.phone}
+          onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+          className="invoice-input"
+        />
       </div>
 
       <h3>Add Products</h3>
       <div className="invoice-form">
-        <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
+        <select
+          value={selectedProduct}
+          onChange={(e) => setSelectedProduct(e.target.value)}
+        >
           <option value="">Select Product</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>
@@ -269,6 +344,7 @@ export default function Invoice() {
             </option>
           ))}
         </select>
+
         <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} />
         <button className="btn btn-add" onClick={addItem}>Add Item</button>
       </div>
@@ -283,7 +359,6 @@ export default function Invoice() {
         ))}
       </div>
 
-      {/* ✅ DELIVERY TOGGLE UI */}
       <h3>Delivery Option</h3>
       <div className="invoice-form">
         <select value={deliveryOption} onChange={(e) => setDeliveryOption(e.target.value)}>
@@ -300,6 +375,7 @@ export default function Invoice() {
           <div key={inv.id} className="invoice-card">
             <strong>Invoice INV-{String(inv.invoice_number).padStart(4, "0")}</strong>
             <p>Customer: {inv.customer_name} | Total: R{inv.total} | Status: {inv.status}</p>
+
             <div className="invoice-actions">
               <button className="btn btn-view" onClick={() => viewPDF(inv.id)}>View PDF</button>
               {inv.status && inv.status !== "processed" && (
