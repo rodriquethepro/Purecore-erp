@@ -82,18 +82,15 @@ export default function Invoice() {
         },
       ]);
     }
-
     setQty(1);
   };
 
   const removeItem = (productId) => setItems(items.filter((i) => i.product_id !== productId));
 
-  // ---------------------- PDF GENERATION ----------------------
   const generatePDF = (invoiceData, itemsList, total, deliveryFee) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // ✅ SAFE IMAGE LOAD (prevents crash if logo fails in production)
     try {
       if (logo) {
         doc.addImage(logo, "PNG", (pageWidth - 100) / 2, 10, 100, 35);
@@ -103,7 +100,6 @@ export default function Invoice() {
     }
 
     let y = 30;
-
     y += 10;
     doc.setFontSize(11);
     doc.text("20 Cupido Road", pageWidth / 2, y, { align: "center" });
@@ -112,11 +108,12 @@ export default function Invoice() {
     y += 6;
     doc.text("Phone: 071 856 6139", pageWidth / 2, y, { align: "center" });
 
+    // Use the invoice creation date here
+    const invoiceDate = new Date(invoiceData.created_at).toLocaleDateString();
     y += 15;
     doc.setFontSize(12);
     doc.text(`Invoice: INV-${String(invoiceData.invoice_number || "").padStart(4, "0")}`, 20, y);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, y + 7);
-
+    doc.text(`Date: ${invoiceDate}`, 20, y + 7);
     doc.text("Bill To:", 140, y);
     doc.text(invoiceData.customer_name, 140, y + 6);
     doc.text(invoiceData.customer_address, 140, y + 12);
@@ -145,36 +142,65 @@ export default function Invoice() {
 
     doc.line(20, y, 190, y);
     y += 10;
-    if (deliveryFee > 0) doc.text(`Delivery Fee: R${deliveryFee}`, 135, y);
-    else doc.text("Delivery: FREE", 135, y);
-    y += 10;
     doc.setFont("helvetica", "bold");
+    doc.text(deliveryFee > 0 ? `Delivery Fee: R${deliveryFee}` : "Delivery: FREE", 135, y);
+    y += 10;
     doc.text(`Total: R${total}`, 160, y);
+
+    // Add banking details
+    const bankingDetails = "Bank: Your Bank Name\nAccount Number: 1234567890\nSort Code: 00-00-00";
+    const lines = bankingDetails.split('\n');
+    lines.forEach((line, index) => {
+      doc.text(line, 10, 200 + index * 6); // Position on the left at the bottom
+    });
+
+    // Add payment reference
+    doc.setFontSize(10);
+    doc.text(`Payment Reference: INV-${String(invoiceData.invoice_number).padStart(4, "0")}`, 10, 150);
+
+    // Add received by details on the bottom right
+    y = 250; // Positioning Y for the signature section
+    doc.setFontSize(10);
+    doc.text(`Received By: _______________________`, 150, y); // Placeholder for signature
+    doc.text(`Name: _______________________`, 150, y + 6); // Placeholder for name
+    doc.text(`Date: _______________________`, 150, y + 12); // Placeholder for date
 
     return doc;
   };
 
-  // ---------------------- CREATE INVOICE ----------------------
   const createInvoice = async () => {
-    if (!customer.name || !customer.address || !customer.phone) return alert("Fill customer details");
-    if (items.length === 0) return alert("Add items");
+    if (!customer.name || !customer.address || !customer.phone) {
+      alert("Fill customer details");
+      return;
+    }
+    if (items.length === 0) {
+      alert("Add items");
+      return;
+    }
 
     const currentItems = [...items];
     let total = currentItems.reduce((sum, i) => sum + i.total, 0);
     let deliveryFee = deliveryOption === "paid" ? 50 : 0;
     total += deliveryFee;
 
-    const { data: invoice } = await supabase
+    const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert([{
         customer_name: customer.name,
         customer_address: customer.address,
         customer_phone: customer.phone,
         total,
-        status: "pending"
+        status: "pending",
+        created_at: new Date()
       }])
       .select()
       .single();
+
+    if (invoiceError) {
+      console.error("Error creating invoice:", invoiceError);
+      alert("Error creating invoice");
+      return;
+    }
 
     for (const item of currentItems) {
       await supabase.from("invoice_items").insert([{
@@ -186,11 +212,16 @@ export default function Invoice() {
         buying_price: item.buying_price
       }]);
 
-      const { data: product } = await supabase
+      const { data: product, error: productError } = await supabase
         .from("products")
         .select("*")
         .eq("id", item.product_id)
         .single();
+
+      if (productError) {
+        console.error("Error fetching product:", productError);
+        continue; // Skip this item if there was an error fetching the product.
+      }
 
       await supabase
         .from("products")
@@ -210,23 +241,42 @@ export default function Invoice() {
 
     const doc = generatePDF(invoice, currentItems, total, deliveryFee);
 
-    // ✅ FIX
-    window.open(doc.output("bloburl"), "_blank");
+    if (doc) {
+      window.open(doc.output("bloburl"), "_blank");
+    } else {
+      console.warn("Generated PDF document is null");
+    }
   };
 
   const viewPDF = async (invoiceId) => {
-    const { data: invoice } = await supabase.from("invoices").select("*").eq("id", invoiceId).single();
-    const { data: invoiceItems } = await supabase
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("id", invoiceId)
+      .single();
+
+    if (invoiceError) {
+      console.error("Error fetching invoice:", invoiceError);
+      alert("Error fetching invoice");
+      return;
+    }
+
+    const { data: invoiceItems, error: itemsError } = await supabase
       .from("invoice_items")
       .select("*")
       .eq("invoice_id", invoiceId);
 
+    if (itemsError) {
+      console.error("Error fetching invoice items:", itemsError);
+      return;
+    }
+
     const mappedItems = invoiceItems.map((i) => ({
       product_id: i.product_id,
-      name: products.find(p => p.id === i.product_id)?.name || "Unknown",
+      name: products.find((p) => p.id === i.product_id)?.name || "Unknown",
       price: i.price,
       quantity: i.quantity,
-      total: i.price * i.quantity
+      total: i.price * i.quantity,
     }));
 
     let itemsTotal = mappedItems.reduce((sum, i) => sum + i.total, 0);
@@ -234,9 +284,163 @@ export default function Invoice() {
 
     const doc = generatePDF(invoice, mappedItems, invoice.total, deliveryFee);
 
-    // ✅ FIX
-    window.open(doc.output("bloburl"), "_blank");
+    if (doc) {
+      window.open(doc.output("bloburl"), "_blank");
+    } else {
+      console.warn("Generated PDF document is null");
+    }
   };
 
-  return <div className="invoice-page">{/* UI unchanged */}</div>;
-}
+  const updateInvoiceStatus = async (invoiceId, newStatus) => {
+    const { error } = await supabase
+      .from("invoices")
+      .update({ status: newStatus })
+      .eq("id", invoiceId);
+
+    if (error) {
+      console.error("Error updating invoice status:", error);
+      alert("Error updating status");
+    } else {
+      fetchInvoices(); // Refresh the list of invoices after updating
+      alert("Invoice status updated successfully");
+    }
+  };
+
+ return (
+  <div className="invoice-page">
+    <h1 className="page-title">Create Invoice</h1>
+
+    {/* CUSTOMER SECTION */}
+    <div className="card">
+      <h2>Customer Details</h2>
+      <select
+        className="input"
+        value={selectedCustomerId}
+        onChange={(e) => setSelectedCustomerId(e.target.value)}
+      >
+        <option value="">Select a customer</option>
+        {customers.map((customer) => (
+          <option key={customer.id} value={customer.id}>
+            {customer.name}
+          </option>
+        ))}
+      </select>
+
+      <div className="customer-info">
+        <p><strong>Name:</strong> {customer.name}</p>
+        <p><strong>Address:</strong> {customer.address}</p>
+        <p><strong>Phone:</strong> {customer.phone}</p>
+      </div>
+    </div>
+
+    {/* PRODUCT SECTION */}
+    <div className="card">
+      <h2>Add Products</h2>
+
+      <div className="flex-row">
+        <select
+          className="input"
+          value={selectedProduct}
+          onChange={(e) => setSelectedProduct(e.target.value)}
+        >
+          <option value="">Select a product</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name} (R{product.selling_price})
+            </option>
+          ))}
+        </select>
+
+        <input
+          className="input small"
+          type="number"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          min="1"
+        />
+
+        <button className="btn primary" onClick={addItem}>
+          Add
+        </button>
+      </div>
+    </div>
+
+    {/* ITEMS */}
+    <div className="card">
+      <h2>Invoice Items</h2>
+
+      {items.length === 0 ? (
+        <p className="empty">No items added</p>
+      ) : (
+        items.map((item) => (
+          <div key={item.product_id} className="item-row">
+            <span>{item.name}</span>
+            <span>Qty: {item.quantity}</span>
+            <span>R{item.total}</span>
+            <button
+              className="btn danger"
+              onClick={() => removeItem(item.product_id)}
+            >
+              Remove
+            </button>
+          </div>
+        ))
+      )}
+    </div>
+
+    {/* DELIVERY */}
+    <div className="card">
+      <h2>Delivery</h2>
+      <select
+        className="input"
+        value={deliveryOption}
+        onChange={(e) => setDeliveryOption(e.target.value)}
+      >
+        <option value="free">Free Delivery</option>
+        <option value="paid">Paid Delivery (R50)</option>
+      </select>
+    </div>
+
+    {/* CREATE BUTTON */}
+    <button className="btn success full" onClick={createInvoice}>
+      Create Invoice
+    </button>
+
+    {/* HISTORY */}
+    <div className="card">
+      <h2>Past Invoices</h2>
+
+      {invoices.map((invoice) => (
+        <div key={invoice.id} className="invoice-row">
+          <div>
+            <strong>
+              INV-{String(invoice.invoice_number).padStart(4, "0")}
+            </strong>
+            <p>R{invoice.total}</p>
+            <p className={`status ${invoice.status}`}>
+              {invoice.status}
+            </p>
+          </div>
+
+          <div className="actions">
+            <button className="btn" onClick={() => viewPDF(invoice.id)}>
+              View
+            </button>
+            <button
+              className="btn success"
+              onClick={() => updateInvoiceStatus(invoice.id, "paid")}
+            >
+              Paid
+            </button>
+            <button
+              className="btn warning"
+              onClick={() => updateInvoiceStatus(invoice.id, "unpaid")}
+            >
+              Unpaid
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);}
