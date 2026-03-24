@@ -148,7 +148,7 @@ export default function Invoice() {
     doc.text(`Total: R${total}`, 160, y);
 
     // Add banking details
-    const bankingDetails = "Bank: Your Bank Name\nAccount Number: 1234567890\nSort Code: 00-00-00";
+    const bankingDetails = "Bank: Capitec\nAccount Name: PureCore Group\nAccount Number: 2517867905\nBranch Code: 470010";
     const lines = bankingDetails.split('\n');
     lines.forEach((line, index) => {
       doc.text(line, 10, 200 + index * 6); // Position on the left at the bottom
@@ -161,10 +161,10 @@ export default function Invoice() {
     // Add received by details on the bottom right
     y = 250; // Positioning Y for the signature section
     doc.setFontSize(10);
-    doc.text(`Received By: _______________________`, 150, y); // Placeholder for signature
+    doc.text(`Received By: `, 150, y); // Placeholder for signature
     doc.text(`Name: _______________________`, 150, y + 6); // Placeholder for name
     doc.text(`Date: _______________________`, 150, y + 12); // Placeholder for date
-
+    doc.text(`Signature: __________________`, 150, y + 18); // Placeholder for signature
     return doc;
   };
 
