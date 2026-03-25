@@ -108,7 +108,6 @@ export default function Invoice() {
     y += 6;
     doc.text("Phone: 071 856 6139", pageWidth / 2, y, { align: "center" });
 
-    // Use the invoice creation date here
     const invoiceDate = new Date(invoiceData.created_at).toLocaleDateString();
     y += 15;
     doc.setFontSize(12);
@@ -147,18 +146,15 @@ export default function Invoice() {
     y += 10;
     doc.text(`Total: R${total}`, 160, y);
 
-    // Add banking details
     const bankingDetails = "Bank: Capitec\nAccount Name: PureCore Group\nAccount Number: 2517867905\nBranch Code: 470010";
     const lines = bankingDetails.split('\n');
     lines.forEach((line, index) => {
       doc.text(line, 10, 200 + index * 6); // Position on the left at the bottom
     });
 
-    // Add payment reference
     doc.setFontSize(10);
     doc.text(`Payment Reference: INV-${String(invoiceData.invoice_number).padStart(4, "0")}`, 10, 150);
 
-    // Add received by details on the bottom right
     y = 250; // Positioning Y for the signature section
     doc.setFontSize(10);
     doc.text(`Received By: `, 150, y); // Placeholder for signature
@@ -306,141 +302,211 @@ export default function Invoice() {
     }
   };
 
- return (
-  <div className="invoice-page">
-    <h1 className="page-title">Create Invoice</h1>
+  // New function to update invoice status to "delivery"
+  const updateInvoiceToDelivered = async (invoiceId) => {
+    const { error } = await supabase
+      .from("invoices")
+      .update({ status: "delivery" })
+      .eq("id", invoiceId);
 
-    {/* CUSTOMER SECTION */}
-    <div className="card">
-      <h2>Customer Details</h2>
-      <select
-        className="input"
-        value={selectedCustomerId}
-        onChange={(e) => setSelectedCustomerId(e.target.value)}
-      >
-        <option value="">Select a customer</option>
-        {customers.map((customer) => (
-          <option key={customer.id} value={customer.id}>
-            {customer.name}
-          </option>
-        ))}
-      </select>
+    if (error) {
+      console.error("Error updating invoice status to delivery:", error);
+      alert("Error updating status to delivery");
+    } else {
+      fetchInvoices(); // Refresh the list of invoices after updating
+      alert("Invoice status updated to delivered successfully");
+    }
+  };
 
-      <div className="customer-info">
-        <p><strong>Name:</strong> {customer.name}</p>
-        <p><strong>Address:</strong> {customer.address}</p>
-        <p><strong>Phone:</strong> {customer.phone}</p>
-      </div>
-    </div>
+  // Function to delete an invoice
+  const deleteInvoice = async (invoiceId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this invoice?");
+    if (!confirmDelete) return;
 
-    {/* PRODUCT SECTION */}
-    <div className="card">
-      <h2>Add Products</h2>
+    // First, delete associated invoice items
+    const { error: itemsError } = await supabase
+      .from("invoice_items")
+      .delete()
+      .eq("invoice_id", invoiceId);
 
-      <div className="flex-row">
+    if (itemsError) {
+      console.error("Error deleting invoice items:", itemsError);
+      alert("Error deleting associated invoice items. Invoice not deleted.");
+      return;
+    }
+
+    // Now, delete the invoice itself
+    const { error } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("id", invoiceId);
+
+    if (error) {
+      console.error("Error deleting invoice:", error);
+      alert("Error deleting invoice");
+    } else {
+      fetchInvoices(); // Refresh the list after deletion
+      alert("Invoice deleted successfully");
+    }
+  };
+
+  // Function to group invoices by month and year
+  const groupInvoicesByDate = (invoices) => {
+    const groupedInvoices = {};
+
+    invoices.forEach(invoice => {
+      const invoiceDate = new Date(invoice.created_at);
+      const monthYear = `${invoiceDate.getMonth() + 1}-${invoiceDate.getFullYear()}`;
+
+      if (!groupedInvoices[monthYear]) {
+        groupedInvoices[monthYear] = [];
+      }
+      groupedInvoices[monthYear].push(invoice);
+    });
+
+    return groupedInvoices;
+  };
+
+  const groupedInvoices = groupInvoicesByDate(invoices);
+
+  return (
+    <div className="invoice-page">
+      <h1 className="page-title">Create Invoice</h1>
+
+      {/* CUSTOMER SECTION */}
+      <div className="card">
+        <h2>Customer Details</h2>
         <select
           className="input"
-          value={selectedProduct}
-          onChange={(e) => setSelectedProduct(e.target.value)}
+          value={selectedCustomerId}
+          onChange={(e) => setSelectedCustomerId(e.target.value)}
         >
-          <option value="">Select a product</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name} (R{product.selling_price})
+          <option value="">Select a customer</option>
+          {customers.map((customer) => (
+            <option key={customer.id} value={customer.id}>
+              {customer.name}
             </option>
           ))}
         </select>
 
-        <input
-          className="input small"
-          type="number"
-          value={qty}
-          onChange={(e) => setQty(e.target.value)}
-          min="1"
-        />
+        <div className="customer-info">
+          <p><strong>Name:</strong> {customer.name}</p>
+          <p><strong>Address:</strong> {customer.address}</p>
+          <p><strong>Phone:</strong> {customer.phone}</p>
+        </div>
+      </div>
 
-        <button className="btn primary" onClick={addItem}>
-          Add
-        </button>
+      {/* PRODUCT SECTION */}
+      <div className="card">
+        <h2>Add Products</h2>
+        <div className="flex-row">
+          <select
+            className="input"
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+          >
+            <option value="">Select a product</option>
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.name} (R{product.selling_price})
+              </option>
+            ))}
+          </select>
+
+          <input
+            className="input small"
+            type="number"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            min="1"
+          />
+
+          <button className="btn primary" onClick={addItem}>
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* ITEMS */}
+      <div className="card">
+        <h2>Invoice Items</h2>
+        {items.length === 0 ? (
+          <p className="empty">No items added</p>
+        ) : (
+          items.map((item) => (
+            <div key={item.product_id} className="item-row">
+              <span>{item.name}</span>
+              <span>Qty: {item.quantity}</span>
+              <span>R{item.total}</span>
+              <button
+                className="btn danger"
+                onClick={() => removeItem(item.product_id)}
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* DELIVERY */}
+      <div className="card">
+        <h2>Delivery</h2>
+        <select
+          className="input"
+          value={deliveryOption}
+          onChange={(e) => setDeliveryOption(e.target.value)}
+        >
+          <option value="free">Free Delivery</option>
+          <option value="paid">Paid Delivery (R50)</option>
+        </select>
+      </div>
+
+      {/* CREATE BUTTON */}
+      <button className="btn success full" onClick={createInvoice}>
+        Create Invoice
+      </button>
+
+      {/* HISTORY */}
+      <div className="card">
+        <h2>Past Invoices</h2>
+        {Object.keys(groupedInvoices).length === 0 ? (
+          <p className="empty">No past invoices found.</p>
+        ) : (
+          Object.keys(groupedInvoices).map((monthYear) => (
+            <div key={monthYear} className="invoice-group">
+              <h3>{monthYear}</h3>
+              {groupedInvoices[monthYear].map((invoice) => (
+                <div key={invoice.id} className="invoice-row">
+                  <div>
+                    <strong>INV-{String(invoice.invoice_number).padStart(4, "0")}</strong>
+                    <p>R{invoice.total}</p>
+                    <p className={`status ${invoice.status}`}>{invoice.status}</p>
+                  </div>
+
+                  <div className="actions">
+                    {invoice.status === "paid" ? (
+                      <button className="btn" onClick={() => viewPDF(invoice.id)}>View</button>
+                    ) : (
+                      <>
+                        <button className="btn" onClick={() => viewPDF(invoice.id)}>View</button>
+                        {invoice.status !== "delivery" && (
+                          <button className="btn success" onClick={() => {
+                            updateInvoiceToDelivered(invoice.id);
+                          }}>Delivered</button>
+                        )}
+                        <button className="btn danger" onClick={() => deleteInvoice(invoice.id)}>Delete</button>
+                        <button className="btn success" onClick={() => updateInvoiceStatus(invoice.id, "paid")}>Paid</button>
+                        <button className="btn warning" onClick={() => updateInvoiceStatus(invoice.id, "unpaid")}>Unpaid</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
       </div>
     </div>
-
-    {/* ITEMS */}
-    <div className="card">
-      <h2>Invoice Items</h2>
-
-      {items.length === 0 ? (
-        <p className="empty">No items added</p>
-      ) : (
-        items.map((item) => (
-          <div key={item.product_id} className="item-row">
-            <span>{item.name}</span>
-            <span>Qty: {item.quantity}</span>
-            <span>R{item.total}</span>
-            <button
-              className="btn danger"
-              onClick={() => removeItem(item.product_id)}
-            >
-              Remove
-            </button>
-          </div>
-        ))
-      )}
-    </div>
-
-    {/* DELIVERY */}
-    <div className="card">
-      <h2>Delivery</h2>
-      <select
-        className="input"
-        value={deliveryOption}
-        onChange={(e) => setDeliveryOption(e.target.value)}
-      >
-        <option value="free">Free Delivery</option>
-        <option value="paid">Paid Delivery (R50)</option>
-      </select>
-    </div>
-
-    {/* CREATE BUTTON */}
-    <button className="btn success full" onClick={createInvoice}>
-      Create Invoice
-    </button>
-
-    {/* HISTORY */}
-    <div className="card">
-      <h2>Past Invoices</h2>
-
-      {invoices.map((invoice) => (
-        <div key={invoice.id} className="invoice-row">
-          <div>
-            <strong>
-              INV-{String(invoice.invoice_number).padStart(4, "0")}
-            </strong>
-            <p>R{invoice.total}</p>
-            <p className={`status ${invoice.status}`}>
-              {invoice.status}
-            </p>
-          </div>
-
-          <div className="actions">
-            <button className="btn" onClick={() => viewPDF(invoice.id)}>
-              View
-            </button>
-            <button
-              className="btn success"
-              onClick={() => updateInvoiceStatus(invoice.id, "paid")}
-            >
-              Paid
-            </button>
-            <button
-              className="btn warning"
-              onClick={() => updateInvoiceStatus(invoice.id, "unpaid")}
-            >
-              Unpaid
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);}
+  );
+}

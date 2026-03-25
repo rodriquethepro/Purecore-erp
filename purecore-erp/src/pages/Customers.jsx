@@ -11,6 +11,7 @@ export default function Customers() {
     town: "",
     phone: ""
   });
+  const [editingId, setEditingId] = useState(null); // Track editing customer ID
 
   // ---------------------- FETCH CUSTOMERS + INVOICE COUNTS ----------------------
   const fetchCustomers = async () => {
@@ -57,6 +58,42 @@ export default function Customers() {
 
     await supabase.from("customers").insert([form]);
 
+    resetForm(); // Reset form after adding
+    fetchCustomers();
+  };
+
+  // ---------------------- SAVE CUSTOMER ----------------------
+  const saveCustomer = async () => {
+    if (!form.name) return alert("Enter customer name");
+
+    const { error } = await supabase
+      .from("customers")
+      .update(form)
+      .eq("id", editingId);
+
+    if (error) {
+      console.error("Error updating customer:", error);
+      alert("Error updating customer");
+    } else {
+      resetForm(); // Reset form after saving
+      fetchCustomers(); // Refresh customer list
+    }
+  };
+
+  // ---------------------- EDIT CUSTOMER ----------------------
+  const editCustomer = (customer) => {
+    setForm({
+      name: customer.name,
+      street: customer.street,
+      suburb: customer.suburb,
+      town: customer.town,
+      phone: customer.phone
+    });
+    setEditingId(customer.id);
+  };
+
+  // ---------------------- RESET FORM ----------------------
+  const resetForm = () => {
     setForm({
       name: "",
       street: "",
@@ -64,8 +101,26 @@ export default function Customers() {
       town: "",
       phone: ""
     });
+    setEditingId(null); // Clear editing state
+  };
 
-    fetchCustomers();
+  // ---------------------- DELETE CUSTOMER ----------------------
+  const deleteCustomer = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this customer?");
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from("customers")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting customer:", error);
+      alert("Error deleting customer");
+    } else {
+      fetchCustomers(); // Refresh the customers list after deletion
+      alert("Customer deleted successfully");
+    }
   };
 
   // ---------------------- RENDER ----------------------
@@ -101,7 +156,12 @@ export default function Customers() {
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
         />
 
-        <button onClick={addCustomer}>Add Customer</button>
+        {/* Conditionally render the Add or Save button */}
+        {editingId ? (
+          <button onClick={saveCustomer}>Save</button>
+        ) : (
+          <button onClick={addCustomer}>Add Customer</button>
+        )}
       </div>
 
       {/* CUSTOMER LIST */}
@@ -114,9 +174,9 @@ export default function Customers() {
               <th>Phone</th>
               <th>Invoices</th>
               <th>Status</th>
+              <th>Actions</th> {/* <-- New column */}
             </tr>
           </thead>
-
           <tbody>
             {customers.map((c) => (
               <tr key={c.id}>
@@ -130,6 +190,14 @@ export default function Customers() {
                 <td data-label="Invoices">{c.invoice_count}</td>
                 <td data-label="Status">
                   <strong>{c.status}</strong>
+                </td>
+                <td data-label="Actions">
+                  <button className="btn primary" onClick={() => editCustomer(c)}>
+                    Edit
+                  </button>
+                  <button className="btn danger" onClick={() => deleteCustomer(c.id)}> {/* Delete button added */}
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
