@@ -108,15 +108,18 @@ export default function Invoice() {
     y += 6;
     doc.text("Phone: 071 856 6139", pageWidth / 2, y, { align: "center" });
 
+    // Extract customer info from the invoiceData
+    const { customer_name, customer_address, customer_phone } = invoiceData;
+
     const invoiceDate = new Date(invoiceData.created_at).toLocaleDateString();
     y += 15;
     doc.setFontSize(12);
     doc.text(`Invoice: INV-${String(invoiceData.invoice_number || "").padStart(4, "0")}`, 20, y);
     doc.text(`Date: ${invoiceDate}`, 20, y + 7);
     doc.text("Bill To:", 140, y);
-    doc.text(invoiceData.customer_name, 140, y + 6);
-    doc.text(invoiceData.customer_address, 140, y + 12);
-    doc.text(`Phone: ${invoiceData.customer_phone}`, 140, y + 18);
+    doc.text(customer_name, 140, y + 6);
+    doc.text(customer_address, 140, y + 12);
+    doc.text(`Phone: ${customer_phone}`, 140, y + 18);
 
     y += 30;
     doc.setFillColor(230, 230, 230);
@@ -302,7 +305,6 @@ export default function Invoice() {
     }
   };
 
-  // New function to update invoice status to "delivery"
   const updateInvoiceToDelivered = async (invoiceId) => {
     const { error } = await supabase
       .from("invoices")
@@ -318,12 +320,10 @@ export default function Invoice() {
     }
   };
 
-  // Function to delete an invoice
   const deleteInvoice = async (invoiceId) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this invoice?");
     if (!confirmDelete) return;
 
-    // First, delete associated invoice items
     const { error: itemsError } = await supabase
       .from("invoice_items")
       .delete()
@@ -335,7 +335,6 @@ export default function Invoice() {
       return;
     }
 
-    // Now, delete the invoice itself
     const { error } = await supabase
       .from("invoices")
       .delete()
@@ -350,7 +349,6 @@ export default function Invoice() {
     }
   };
 
-  // Function to group invoices by month and year
   const groupInvoicesByDate = (invoices) => {
     const groupedInvoices = {};
 
@@ -480,6 +478,7 @@ export default function Invoice() {
                 <div key={invoice.id} className="invoice-row">
                   <div>
                     <strong>INV-{String(invoice.invoice_number).padStart(4, "0")}</strong>
+                    <strong><p>{String(invoice.customer_name).padStart(4, "0")}</p></strong>
                     <p>R{invoice.total}</p>
                     <p className={`status ${invoice.status}`}>{invoice.status}</p>
                   </div>
